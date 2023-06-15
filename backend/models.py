@@ -46,13 +46,17 @@ class Voo(models.Model):
         ordering = ['data','horario_saida']
 
 class Socio(models.Model):
+    Categorias = [
+        ('A', 'Aluno'),
+        ('P', 'Piloto'),
+        ('I', 'Instrutor')
+    ]
     matricula = models.AutoField(primary_key=True,
                                  editable=False)
-    categoria = models.CharField(max_length=30)
+    categoria = models.CharField(max_length=9, choices = Categorias)
     nome = models.CharField(max_lenght = 100)
     cpf = models.CharField(max_length = 11)
     data_nascimento = models.DateField()
     endereco = models.CharField(max_length = 100)
     id_usuario = models.ForeignKey("usuario.Usuario", on_delete = models.DO_NOTHING)
     email = models.EmailField(max_length=100)
-    
