@@ -27,13 +27,23 @@ class Funcionario(models.Model):
         ordering = ['nome']
 
 class Voo(models.Model):
+    NOTA_CONCEITO = [
+        'A',
+        'B',
+        'C',
+        'D'
+    ]
     id_voo = models.UUIDField(editable = False,
                                     default = uuid.uuid4 )
     data = models.DateField()
     horario_saida = models.TimeField()
     horario_chegada = models.TimeField()
+    parecer = models.CharField(max_length=1, choices=NOTA_CONCEITO)
     id_socio = models.ForeignKey("socio.Socio", on_delete= models.DO_NOTHING)
-    id_instrutor = models.ForeignKey
+    id_instrutor = models.ForeignKey("socio.Socio", on_delete= models.DO_NOTHING)
+    class Meta:
+        indexes = [ models.Index(fields=['id_voo']) ],
+        ordering = ['data','horario_saida']
 
 class Socio(models.Model):
     matricula = models.AutoField(primary_key=True,
