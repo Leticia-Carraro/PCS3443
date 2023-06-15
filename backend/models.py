@@ -1,7 +1,12 @@
 from django.db import models
 
-class Plane(models.Model):
-    plane = models.CharField(max_lenght = 100, unique = True)
+class Funcionario(models.Model):
+    id_funcionario = models.Index()
+    nome = models.CharField(max_lenght = 100)
+    cpf = models.CharField(max_length = 11)
+    data_nascimento = models.DateField()
+    endereco = models.CharField(max_length = 100)
+    
 
 class Maintenance(models.Model):
     plane = models.ForeingKey("planes.Plane", on_delete = models.CASCADE)
