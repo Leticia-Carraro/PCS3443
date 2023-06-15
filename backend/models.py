@@ -18,6 +18,18 @@ class Funcionario(models.Model):
     endereco = models.CharField(max_length = 100)
     id_usuario = models.ForeignKey("usuario.Usuario", on_delete = models.DO_NOTHING)
 
+class Socio(models.Model):
+    matricula = models.AutoField(primary_key=True,
+                                 editable=False)
+    categoria = models.CharField(max_length=30)
+    nome = models.CharField(max_lenght = 100)
+    cpf = models.CharField(max_length = 11)
+    data_nascimento = models.DateField()
+    endereco = models.CharField(max_length = 100)
+    id_usuario = models.ForeignKey("usuario.Usuario", on_delete = models.DO_NOTHING)
+    email = models.EmailField(max_length=100)
+    
+    
 class Maintenance(models.Model):
     plane = models.ForeingKey("planes.Plane", on_delete = models.CASCADE)
     date = models.DateField()
