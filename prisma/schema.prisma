@@ -1,0 +1,92 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id Int @id @default(autoincrement())
+  username String @unique
+  password String
+  role String
+
+  employee Employee?
+  partner Partner?
+
+}
+
+model Address {
+  id Int @id @default(autoincrement())
+  state String
+  city String
+  street String
+  number Int
+  complement String?
+
+  employee Employee?
+  partner Partner?
+  
+}
+
+model Employee {
+  id Int @id @default(autoincrement())
+  name String
+  document String
+  birthDate DateTime @db.Date
+
+  registerNumber String @unique
+
+  address Address @relation(fields: [addressId], references: [id], onDelete: Cascade)
+  addressId Int @unique
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId Int @unique
+}
+
+model Partner {
+  id Int @id @default(autoincrement())
+  name String
+  document String
+  birthDate DateTime @db.Date
+
+  email String @unique
+  registerNumber String @unique
+
+  // pilot
+  licence String? @unique
+
+  // instructor
+  course String?
+  graduationDate DateTime? @db.Date
+  institution String?
+
+  address Address @relation(fields: [addressId], references: [id], onDelete: Cascade)
+  addressId Int @unique
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId Int @unique
+
+  flights Flight[] @relation("pilot")
+  studentFlights Flight[] @relation("student")
+}
+
+model Flight {
+  id Int @id @default(autoincrement())
+  slug String @unique
+  startAt DateTime
+  endAt DateTime
+
+  pilotId Int @unique
+  pilot Partner @relation("pilot", fields: [pilotId], references: [id])
+
+  // lesson
+  score String?
+  student Partner? @relation("student", fields: [studentId], references: [id])
+  studentId Int? @unique
+}
