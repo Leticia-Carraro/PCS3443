@@ -1,6 +1,6 @@
 'use client'
 
-import AdminLayout from "@/component/AdminLayout";
+import AdminLayout from "@/components/AdminLayout";
 import './style.css'
 import Image from 'next/image'
 

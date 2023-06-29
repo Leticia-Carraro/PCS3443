@@ -1,14 +1,11 @@
-import { PrismaClient } from '@prisma/client'
+import { prisma } from './prisma'
 import { initTRPC, TRPCError } from '@trpc/server';
 import { uuid } from 'uuidv4';
 import { z } from 'zod';
-import { EmployeeSchema, FlightSchema, LoginRequestPayload, PartnerSchema, PartnerSchemaPartial, ScoreSchema, ScoreValues, UserSchema } from '@/app/api/schema'
+import { EmployeeCreateRequestPayload, EmployeeSchema, FlightSchema, LoginRequestPayload, PartnerCreateRequestPayload, StudentCreateRequestPayload, PartnerSchemaPartial, ScoreSchema, ScoreValues, UserSchema, PilotCreateRequestPayload, InstructorCreateRequestPayload } from '@/app/api/schema'
 
 const t = initTRPC.create();
 const publicProcedure = t.procedure;
-const prisma = new PrismaClient({
-  log: ['query', 'info', 'warn'],
-})
 
 export const appRouter = t.router({
   hello: publicProcedure
@@ -22,28 +19,28 @@ export const appRouter = t.router({
         throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Invalid username or password' })
       }
       return { user, token: uuid() }
-  }),
+    }),
 
 
   // Employee
   findEmployee: publicProcedure
     .input(z.object({
-      param: z.object({
+      params: z.object({
         regNum: z.string()
       })
-    })).query(async ({ input }) => await prisma.employee.findUnique({ where: { registerNumber: input.param.regNum } })),
+    })).query(async ({ input }) => await prisma.employee.findUnique({ where: { registerNumber: input.params.regNum }, include: { user: true, address: true } })),
 
   listEmployee: publicProcedure
     .query(async () => await prisma.employee.findMany({ include: { user: true, address: true } })),
 
   createEmployee: publicProcedure
-    .input(EmployeeSchema)
+    .input(EmployeeCreateRequestPayload)
     .mutation(async ({ input }) => {
       const user = await prisma.user.create({
         data: {
           username: input.username,
           password: input.password,
-          role: input.role,
+          role: 'employee',
         }
       })
       const address = await prisma.address.create({ data: input.address })
@@ -97,46 +94,110 @@ export const appRouter = t.router({
   // Partner
   findPartner: publicProcedure
     .input(z.object({
-      param: z.object({
+      params: z.object({
         regNum: z.string()
       })
-    })).query(async ({ input }) => await prisma.partner.findUnique({ where: { registerNumber: input.param.regNum } })),
+    })).query(async ({ input }) => await prisma.partner.findUnique({ where: { registerNumber: input.params.regNum }, include: { user: true, address: true } })),
 
   listPartner: publicProcedure.query(async () => await prisma.partner.findMany({ include: { user: true, address: true } })),
 
-  createPartner: publicProcedure
-    .input(PartnerSchema)
+  updateStudentToPilot: publicProcedure
+    .input(z.object({
+      params: z.object({
+        regNum: z.string()
+      }),
+      body: z.object({
+        license: z.string()
+      })
+    }))
     .mutation(async ({ input }) => {
-      const user = await prisma.user.create({
+      await prisma.partner.update({
+        where: { registerNumber: input.params.regNum },
         data: {
-          username: input.username,
-          password: input.password,
-          role: input.role,
+          license: input.body.license,
+          user: { update: { role: 'pilot' } }
         }
       })
-      const address = await prisma.address.create({ data: input.address })
+    }),
 
-      const partner = await prisma.partner.create({
+  createStudent: publicProcedure
+    .input(StudentCreateRequestPayload)
+    .mutation(async ({ input }) => {
+      await prisma.partner.create({
         data: {
           name: input.name,
           document: input.document,
           registerNumber: input.registerNumber,
           birthDate: input.birthDate,
           email: input.email,
-          userId: user.id, addressId: address.id,
-
-          ...(input.type == 'instructor' ? {
-            license: input.license,
-            course: input.course,
-            graduationDate: input.graduationDate,
-            institution: input.institution,
-          } : input.type == 'pilot' ? {
-            license: input.license,
-          } : {})
+          user: {
+            create: {
+              username: input.username,
+              password: input.password,
+              role: 'student',
+            }
+          },
+          address: {
+            create: input.address
+          }
         }
       })
     }),
 
+  createPilot: publicProcedure
+    .input(PilotCreateRequestPayload)
+    .mutation(async ({ input }) => {
+      await prisma.partner.create({
+        data: {
+          name: input.name,
+          document: input.document,
+          registerNumber: input.registerNumber,
+          birthDate: input.birthDate,
+          email: input.email,
+          license: input.license,
+          user: {
+            create: {
+              username: input.username,
+              password: input.password,
+              role: 'pilot',
+            }
+          },
+          address: {
+            create: input.address
+          }
+        }
+      })
+    }),
+
+  createInstructor: publicProcedure
+    .input(InstructorCreateRequestPayload)
+    .mutation(async ({ input }) => {
+      await prisma.partner.create({
+        data: {
+          name: input.name,
+          document: input.document,
+          registerNumber: input.registerNumber,
+          birthDate: input.birthDate,
+          email: input.email,
+          license: input.license,
+          course: input.course,
+          graduationDate: input.graduationDate,
+          institution: input.institution,
+          user: {
+            create: {
+              username: input.username,
+              password: input.password,
+              role: 'instructor',
+            }
+          },
+          address: {
+            create: input.address
+          }
+        }
+      })
+    }),
+
+  /*
   updatePartner: publicProcedure
     .input(z.object({
       param: z.object({
@@ -170,6 +231,7 @@ export const appRouter = t.router({
       // It can't update user
       const address = await prisma.address.update({ data: data.address ?? {}, where: { id: partner.addressId } })
     }),
+    */
 
   deletePartner: publicProcedure
     .input(z.object({
@@ -183,30 +245,14 @@ export const appRouter = t.router({
 
   // Flight
   listFlight: publicProcedure
-    .input(z.object({
-      param: z.object({
-        pilotLicence: z.string().optional(),
-        studentRegistrationNumber: z.string(),
-      })
-    })).query(async ({ input }) =>
+    .query(async () =>
       await prisma.flight.findMany({
         include: { pilot: true, student: true },
-        where: {
-          OR: [{
-            pilot: {
-              licence: input.param.pilotLicence
-            }
-          }, {
-            student: {
-              registerNumber: input.param.studentRegistrationNumber
-            }
-          }]
-        }
       })),
 
   summaryLessonFlights: publicProcedure.input(
     z.object({
-      param: z.object({
+      params: z.object({
         studentRegistrationNumber: z.string()
       })
     })).query(async ({ input }) => {
@@ -214,7 +260,7 @@ export const appRouter = t.router({
         include: { pilot: true, student: true },
         where: {
           student: {
-            registerNumber: input.param.studentRegistrationNumber
+            registerNumber: input.params.studentRegistrationNumber
           }
         }
       })
@@ -231,7 +277,7 @@ export const appRouter = t.router({
       return {
         flightHours: totalDurationHr,
         averageScore: valueToScore(averageScore),
-        allowLicence: totalDurationHr >= 150 && averageScore >= scoreToValue(ScoreSchema.enum.B),
+        allowLicense: totalDurationHr >= 150 && averageScore >= scoreToValue(ScoreSchema.enum.B),
       }
     }),
 
@@ -239,12 +285,12 @@ export const appRouter = t.router({
     .input(FlightSchema)
     .mutation(async ({ input }) => {
 
-      const pilot = await prisma.partner.findUnique({ where: { licence: input.pilotLicence } })
+      const pilot = await prisma.partner.findUnique({ where: { license: input.pilotLicense } })
 
       if (pilot == null) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
-          message: `pilot ${input.pilotLicence} not found`
+          message: `pilot ${input.pilotLicense} not found`
         })
       }
 

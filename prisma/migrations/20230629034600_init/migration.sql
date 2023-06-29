@@ -41,7 +41,7 @@ CREATE TABLE "Partner" (
     "birthDate" DATE NOT NULL,
     "email" TEXT NOT NULL,
     "registerNumber" TEXT NOT NULL,
-    "licence" TEXT,
+    "license" TEXT,
     "course" TEXT,
     "graduationDate" DATE,
     "institution" TEXT,
@@ -83,7 +83,7 @@ CREATE UNIQUE INDEX "Partner_email_key" ON "Partner"("email");
 CREATE UNIQUE INDEX "Partner_registerNumber_key" ON "Partner"("registerNumber");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Partner_licence_key" ON "Partner"("licence");
+CREATE UNIQUE INDEX "Partner_license_key" ON "Partner"("license");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Partner_addressId_key" ON "Partner"("addressId");

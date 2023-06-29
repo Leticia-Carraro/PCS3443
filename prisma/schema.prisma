@@ -59,7 +59,7 @@ model Partner {
   registerNumber String @unique
 
   // pilot
-  licence String? @unique
+  license String? @unique
 
   // instructor
   course String?
