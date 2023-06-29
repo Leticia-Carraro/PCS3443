@@ -14,6 +14,7 @@ import {
 export default function FlightPage() {
   const query = trpc.listFlight.useQuery()
   const isEmpty = query.data?.length === 0
+  const role = localStorage.getItem("role")
 
   const deleteMutation = trpc.deleteFlight.useMutation({
     onSuccess: () => { query.refetch() }
@@ -26,16 +27,21 @@ export default function FlightPage() {
             Voos
           </h2>
           <div className="space-x-2">
-          <Link href="/flight/new/lesson">
-            <Button>
-              + Lição de voo
-            </Button>
-          </Link>
-          <Link href="/flight/new/solo">
-            <Button>
-              + Voo solo
-            </Button>
-          </Link>
+
+            {(role === "instructor" || role === "admin") && (
+            <Link href="/flight/new/lesson">
+              <Button>
+                + Lição de voo
+              </Button>
+            </Link>
+            )}
+            {(role === "admin" || role === "employee") && (
+              <Link href="/flight/new/solo">
+                <Button>
+                  + Voo solo
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
 
@@ -44,38 +50,39 @@ export default function FlightPage() {
 
 
         {query.data?.map((flight) => (
-            <div key={flight.slug} className="flex items-center hover:bg-slate-100 p-2 rounded">
-              <div className="space-y-1">
-                <p className="text-sm font-medium leading-none">
-                  {flight.slug} - {flight.pilot.name} {flight.student?.name && '/'} {flight.student?.name}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {format(new Date(flight.startAt), "dd/MM/yyyy HH:mm")} - {format(new Date(flight.endAt), "dd/MM/yyyy HH:mm")}
-                </p>
-              </div>
-              <div className="ml-auto font-medium">
-                {/*
+          <div key={flight.slug} className="flex items-center hover:bg-slate-100 p-2 rounded">
+            <div className="space-y-1">
+              <p className="text-sm font-medium leading-none">
+                {flight.slug} - {flight.pilot.name} {flight.student?.name && '/'} {flight.student?.name}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {format(new Date(flight.startAt), "dd/MM/yyyy HH:mm")} - {format(new Date(flight.endAt), "dd/MM/yyyy HH:mm")}
+              </p>
+            </div>
+            <div className="ml-auto font-medium">
+              {/*
                 <Link href={`/employee/${employee.registerNumber}/edit`}>
                   <Button variant="ghost">
                     <Pencil className="h-4 w-4" />
                   </Button>
                 </Link>
-*/}
-                <Link href={`/flight/${flight.slug}`}>
-                  <Button variant="ghost">
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                </Link>
-
-                <Button
-                  variant="ghost"
-                  onClick={() => deleteMutation.mutate({ params: { slug: flight.slug } })}
-                  disabled={deleteMutation.isLoading}
-                >
-                  <Trash className="h-4 w-4" />
+              <Link href={`/flight/${flight.slug}`}>
+                <Button variant="ghost">
+                  <Eye className="h-4 w-4" />
                 </Button>
-              </div>
+              </Link>
+*/}
+
+            {(role === "admin" || role === "employee") && (
+              <Button
+                variant="ghost"
+                onClick={() => deleteMutation.mutate({ params: { slug: flight.slug } })}
+                disabled={deleteMutation.isLoading}
+              >
+                <Trash className="h-4 w-4" />
+              </Button>)}
             </div>
+          </div>
         ))}
       </div>
     </AdminLayout>
